@@ -3,7 +3,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import React from 'react';
 import { BrowserView, MobileView } from "react-device-detect";
 import { Toaster } from 'react-hot-toast';
-import { DynamicPricingCandyMachine } from './components/DynamicPricingCandyMachine';
+import { DynamicPricingCandyMachine } from './components-old/DynamicPricingCandyMachine';
 
 function Home() {
   const { setVisible } = useWalletModal();

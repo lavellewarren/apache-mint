@@ -1,3 +1,4 @@
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { MarketplaceProviders } from "@strata-foundation/marketplace-ui";
 import {
   Notification
@@ -38,9 +39,11 @@ export const onError = (error) => {
 export const Providers = ({ children }) => {
   return (
     <Wallet>
-      <MarketplaceProviders resetCSS onError={onError}>
-        {children}
-      </MarketplaceProviders>
+      <WalletModalProvider>
+        <MarketplaceProviders resetCSS onError={onError}>
+          {children}
+        </MarketplaceProviders>
+      </WalletModalProvider>
     </Wallet>
   );
 };

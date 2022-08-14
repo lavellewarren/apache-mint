@@ -1,55 +1,47 @@
 import {
   Box,
   Button,
-  Center,
+  Flex,
+  Grid,
+  GridItem,
+  Image,
+  Progress,
   Spinner,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  useColorModeValue,
+  Text,
   VStack,
 } from "@chakra-ui/react";
-import { GatewayProvider } from "@civic/solana-gateway-react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import { CANDY_MACHINE_PROGRAM, mintOneToken, toDate, useCandyMachineInfo, useLivePrice } from "@strata-foundation/marketplace-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { mintOneToken, numberWithCommas, useCandyMachineInfo, useLivePrice } from "@strata-foundation/marketplace-ui";
 import {
   Notification,
+  useSolanaUnixTime,
   useTokenBondingFromMint,
 } from "@strata-foundation/react";
-import BN from "bn.js";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { BondingPlot } from "./BondingPlot";
-import { Branding } from "./Branding";
-import { CandyMachineInfo } from "./CandyMachineInfo";
-import { LbcInfo } from "./LbcInfo";
-import { LbcStatus } from "./LbcStatus";
+import { formatUTC } from "../utils";
 import { MintButton } from "./MintButton";
 import { MintedNftNotification } from "./MintedNftNotification";
-import { TransactionHistory } from "./TransactionHistory";
+import { PrivatePrice } from "./PrivatePrice";
+import { PublicPrice } from "./PublicPrice";
+import { TimeCountdown } from "./TimeCountdown";
 
 export const DynamicPricingCandyMachine = (
   props
 ) => {
-  const { connection } = useConnection();
-  const { publicKey, connected, signTransaction, wallet } = useWallet();
+  const { publicKey, connected } = useWallet();
 
   const cmState = useCandyMachineInfo(props.candyMachineId);
-  const { candyMachine, isWhitelistUser, isActive, isPresale } = cmState;
+  const { candyMachine, isWhitelistUser, discountPrice, isActive, isPresale } = cmState;
 
   const mintKey = candyMachine?.tokenMint;
   const {
     info: tokenBonding,
   } = useTokenBondingFromMint(mintKey);
-  const { price } = useLivePrice(tokenBonding?.publicKey);
-  const background = useColorModeValue("white", "black.300");
+  const { price, loading: loadingPricing } = useLivePrice(tokenBonding?.publicKey);
 
   const onMint = async (args) => {
     try {
-      document.getElementById("#identity")?.click();
       if (
         connected &&
         candyMachine?.program &&
@@ -119,152 +111,195 @@ export const DynamicPricingCandyMachine = (
     }
   };
 
-  const selectedProps = {
-    borderBottom: "3px solid #F07733",
-  };
+  useEffect(() => {
+    console.log(candyMachine, candyMachine?.goLiveDate.toNumber(), 'candyMachine');
+  }, [candyMachine]);
+
+	const solanaUnixTime = useSolanaUnixTime();
+
+	const [unixTime, setUnixTime] = useState(Math.round(Date.now() / 1000));
+
+	useEffect(() => {
+		setUnixTime(solanaUnixTime || Math.round(Date.now() / 1000));
+	}, [solanaUnixTime]);
 
   return (
-    <Tabs variant="unstyled" isLazy>
-      <TabList borderBottom="none">
-        <Tab _selected={selectedProps} fontWeight={600}>
-          Mint
-        </Tab>
-        {tokenBonding && (
-          <Tab _selected={selectedProps} fontWeight={600}>
-            Transactions
-          </Tab>
-        )}
-      </TabList>
-      <TabPanels>
-        <TabPanel p={0} pt={4}>
-          { typeof window !== "undefined" && <LbcStatus tokenBondingKey={tokenBonding?.publicKey} /> }
+    <Grid
+      w={'full'}
+      h={'full'}
+      minH={'100vh'}
+      backgroundImage={
+        'url(/assets/img/background.png)'
+      }
+      backgroundSize={'100% 100%'}
+      backgroundPosition={'center center'}
+      py={{ base: 8, md: 16 }}
+      px={{ base: 12, md: 24 }}
+      color={'black'}
+    >
+      <Grid w={'full'} marginBottom={{ base: 8, md: 16 }}>
+        <Image
+          alt={'Logo Image'}
+          fit={'cover'}
+          align={'center'}
+          w={'120px'}
+          h={'120px'}
+          src={
+            '/assets/img/logo1.png'
+          }
+        />
+      </Grid>
+      <Grid w={'full'} display={{ base: 'block', md: 'flex' }} marginBottom={'60'}>
+        <GridItem
+          w={{ base: '100%', md: '40%' }}
+          marginTop={6}
+        >
+          <Text fontSize={'5xl'} fontWeight={'bold'} align={'center'}>
+            MINT AN APACHE!
+          </Text>
+          <Text fontSize={'xl'} fontWeight={'bold'}>
+            Description for the mint. Description for the mint. Description for the mint. Description for the mint. Description for the mint. 
+          </Text>
           <Box
-            zIndex={1}
-            shadow="xl"
-            rounded="lg"
-            p="16px"
-            pb="29px"
-            minH="300px"
-            bg={background}
+            position={'relative'}
+            rounded={'2xl'}
+            width={'full'}
+            overflow={'hidden'}>
+            <Image
+              alt={'Hero Image'}
+              fit={'cover'}
+              align={'center'}
+              w={'100%'}
+              h={'100%'}
+              src={
+                '/assets/img/apaches-gif.gif'
+              }
+            />
+          </Box>
+        </GridItem>
+        <GridItem w={{ base: '100%', md: '60%' }} paddingLeft={{ base: 0, md: 12 }}>
+          <Text fontSize={'2xl'} fontWeight={'bold'} marginBottom={6}>
+            {!connected && `Please connect your wallet`}
+            {
+              candyMachine?.goLiveDate
+              && unixTime < candyMachine?.goLiveDate.toNumber()
+              && `Mint day: ${formatUTC(candyMachine?.goLiveDate.toNumber())}`
+            }
+            {
+              candyMachine?.goLiveDate
+              && unixTime > candyMachine?.goLiveDate.toNumber()
+              && candyMachine?.isSoldOut === false
+              && `Minting Now!`
+            }
+            {
+              candyMachine?.goLiveDate
+              && unixTime > candyMachine?.goLiveDate.toNumber()
+              && candyMachine?.isSoldOut === true
+              && `Sold Out!`
+            }
+          </Text>
+          <Box
+            rounded={'2xl'}
+            background={'whiteAlpha.500'}
+            px={8}
+            paddingTop={6}
+            paddingBottom={20}
           >
-            {connected && (
-              <>
-                {!candyMachine && (
-                  <Center>
-                    <Spinner />
-                  </Center>
-                )}
-                {candyMachine && (
-                  <VStack align="stretch" spacing={8}>
-                    {tokenBonding && (
-                      <LbcInfo price={price} id={tokenBonding.targetMint} />
+            {candyMachine?.goLiveDate && unixTime < candyMachine?.goLiveDate.toNumber() && (
+              <TimeCountdown
+                connected={connected}
+                goLiveDate={candyMachine?.goLiveDate.toNumber()}
+              />
+            )}
+            {candyMachine && candyMachine?.goLiveDate && unixTime > candyMachine?.goLiveDate.toNumber() && (
+              <VStack marginBottom={6}>
+                <Flex
+                  width={'full'}
+                  flexDirection={'row'}
+                >
+                  <Text fontSize={'2xl'} fontWeight={'bold'}>
+                    Total Minted
+                  </Text>
+                  <Grid flexGrow={1}></Grid>
+                  <Text fontSize={'2xl'} fontWeight={'bold'} color={'#568c74'} marginRight={'10px'}>
+                    {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
+                      `[${numberWithCommas(Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100, 1)}%]`
                     )}
-
-                    {!tokenBonding && <CandyMachineInfo {...cmState} />}
-
-                    {candyMachine?.isActive &&
-                    candyMachine?.gatekeeper &&
-                    publicKey &&
-                    signTransaction ? (
-                      // @ts-ignore
-                      <GatewayProvider
-                        wallet={{
-                          publicKey:
-                            publicKey || new PublicKey(CANDY_MACHINE_PROGRAM),
-                          //@ts-ignore
-                          signTransaction: wallet.signTransaction,
-                        }}
-                        gatekeeperNetwork={
-                          candyMachine?.gatekeeper?.gatekeeperNetwork
-                        }
-                        // @ts-ignore
-                        clusterUrl={connection._rpcEndpoint}
-                        options={{ autoShowModal: false }}
-                      >
-                        <MintButton
-                          price={price}
-                          onMint={onMint}
-                          tokenBondingKey={tokenBonding?.publicKey}
-                          isDisabled={
-                            (!isActive && (!isPresale || !isWhitelistUser)) ||
-                            (candyMachine.isWhitelistOnly && !isWhitelistUser)
-                          }
-                          disabledText={
-                            candyMachine.isWhitelistOnly && !isWhitelistUser
-                              ? "No Whitelist Token"
-                              : `Mint launches ${getCountdownDate(
-                                  candyMachine
-                                )?.toLocaleTimeString()}`
-                          }
-                        />
-                      </GatewayProvider>
-                    ) : (
-                      <MintButton
-                        price={price}
-                        onMint={onMint}
-                        tokenBondingKey={tokenBonding?.publicKey}
-                        isDisabled={
-                          (!isActive && (!isPresale || !isWhitelistUser)) ||
-                          (candyMachine.isWhitelistOnly && !isWhitelistUser)
-                        }
-                        disabledText={
-                          candyMachine.isWhitelistOnly && !isWhitelistUser
-                            ? "No Whitelist Token"
-                            : `Mint launches ${getCountdownDate(
-                                candyMachine
-                              )?.toLocaleTimeString()}`
-                        }
-                      />
-                    )}
-                    <Branding />
-                  </VStack>
+                  </Text>
+                  <Text fontSize={'2xl'} fontWeight={'bold'}>
+                    {`${candyMachine?.itemsRedeemed} / ${candyMachine.itemsAvailable}`}
+                  </Text>
+                </Flex>
+                {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
+                  <Progress
+                    height='32px'
+                    width={'full'}
+                    value={Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100}
+                    borderRadius={'20px'}
+                  />
                 )}
-              </>
+              </VStack>
+            )}
+            <PrivatePrice
+              connected={connected}
+              candyMachine={candyMachine}
+              isWhitelistUser={isWhitelistUser}
+              discountPrice={discountPrice}
+              goLiveDate={candyMachine?.goLiveDate.toNumber()}
+            />
+            <PublicPrice
+              connected={connected}
+              candyMachine={candyMachine}
+              price={price}
+              loadingPricing={loadingPricing}
+              goLiveDate={candyMachine?.goLiveDate.toNumber()}
+            />
+            {connected && !candyMachine && (
+              <Flex>
+                <Button
+                  w={'full'}
+                  background={'#9a46fb'}
+                  color={'white'}
+                  fontSize={'2xl'}
+                  fontWeight={'bold'}
+                  size={'lg'}
+                >
+                  <Spinner />
+                </Button>
+              </Flex>
+            )}
+            {connected && candyMachine && (
+              <MintButton
+                price={price}
+                onMint={onMint}
+                tokenBondingKey={tokenBonding?.publicKey}
+                isDisabled={
+                  (!isActive && (!isPresale || !isWhitelistUser)) ||
+                  (candyMachine.isWhitelistOnly && !isWhitelistUser)
+                }
+              />
             )}
             {!connected && (
-              <Center>
+              <Flex>
                 <Button
-                  variant="outline"
-                  colorScheme="primary"
+                  w={'full'}
+                  background={'#9a46fb'}
+                  color={'white'}
+                  fontSize={'2xl'}
+                  fontWeight={'bold'}
+                  size={'lg'}
                   onClick={props.onConnectWallet}
                 >
                   Connect Wallet
                 </Button>
-              </Center>
+              </Flex>
             )}
           </Box>
-        </TabPanel>
-        <TabPanel p={0} pt={4}>
-          <Box
-            zIndex={1}
-            shadow="xl"
-            rounded="lg"
-            p="16px"
-            pb="29px"
-            minH="300px"
-            bg={background}
-          >
-            <VStack align="stretch" spacing={8}>
-              <BondingPlot tokenBondingKey={tokenBonding?.publicKey} />
-              <TransactionHistory tokenBondingKey={tokenBonding?.publicKey} />
-            </VStack>
-          </Box>
-        </TabPanel>
-      </TabPanels>
-    </Tabs>
-  );
-};
-
-const getCountdownDate = (candyMachine) => {
-  if (candyMachine.isActive && candyMachine.endSettings?.endSettingType.date) {
-    return toDate(candyMachine.endSettings.number);
-  }
-
-  return toDate(
-    candyMachine.goLiveDate
-      ? candyMachine.goLiveDate
-      : candyMachine.isPresale
-      ? new BN(new Date().getTime() / 1000)
-      : undefined
+          <Text textAlign={'center'} fontSize={'lg'} fontWeight={'bold'} color={'#544a5c'}>
+            Powered by LIBROS.COM
+          </Text>
+        </GridItem>
+      </Grid>
+    </Grid>
   );
 };
