@@ -6,8 +6,7 @@ import {
 } from 'date-fns';
 
 export function formatElapsedTime(start, end) {
-    console.log(start, end, 'start, end')
-    const duration = intervalToDuration({ start: new Date(start), end: new Date(end) });
+    const duration = intervalToDuration({ start: new Date(start * 1000), end: new Date(end * 1000) });
     return formatDuration(duration, {format: ['days', 'hours', 'minutes', 'seconds']})
         .replace(' days', 'd')
         .replace(' day', 'd')
@@ -20,7 +19,7 @@ export function formatElapsedTime(start, end) {
 }
 
 export function formatUTC(timestamp) {
-    return `${format(addMinutes(timestamp * 1000, new Date(timestamp).getTimezoneOffset()), 'EEEE, do MMMM haaa UTC')} UTC`;
+    return `${format(addMinutes(timestamp * 1000, new Date(timestamp).getTimezoneOffset()), 'EEEE, do MMMM haaa')} UTC`;
 }
 
 export const CNDY_STATUS = {

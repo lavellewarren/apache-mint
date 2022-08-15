@@ -4,7 +4,9 @@ import {
   Flex,
   Grid,
   GridItem,
+  HStack,
   Image,
+  Link,
   Progress,
   Spinner,
   Text,
@@ -26,6 +28,10 @@ import { PrivatePrice } from "./PrivatePrice";
 import { PublicPrice } from "./PublicPrice";
 import { TimeCountdown } from "./TimeCountdown";
 
+const defaultGoLiveDate = Number(process.env.REACT_APP_DEFAULT_GOLIVEDATE ? process.env.REACT_APP_DEFAULT_GOLIVEDATE : 1660575600);
+const presaleStartDate = Number(process.env.REACT_APP_PRESALE_STARTDATE ? process.env.REACT_APP_PRESALE_STARTDATE : 1660575600);
+const presaleEndDate = presaleStartDate + Number(process.env.REACT_APP_PRESALE_DURATION ? process.env.REACT_APP_PRESALE_DURATION : 3600);
+
 export const DynamicPricingCandyMachine = (
   props
 ) => {
@@ -33,6 +39,7 @@ export const DynamicPricingCandyMachine = (
 
   const cmState = useCandyMachineInfo(props.candyMachineId);
   const { candyMachine, isWhitelistUser, discountPrice, isActive, isPresale } = cmState;
+  const goLiveDate = candyMachine?.goLiveDate !== undefined && candyMachine?.goLiveDate.toNumber() !== 0 ? candyMachine?.goLiveDate.toNumber() : defaultGoLiveDate;
 
   const mintKey = candyMachine?.tokenMint;
   const {
@@ -111,10 +118,6 @@ export const DynamicPricingCandyMachine = (
     }
   };
 
-  useEffect(() => {
-    console.log(candyMachine, candyMachine?.goLiveDate.toNumber(), 'candyMachine');
-  }, [candyMachine]);
-
 	const solanaUnixTime = useSolanaUnixTime();
 
 	const [unixTime, setUnixTime] = useState(Math.round(Date.now() / 1000));
@@ -124,182 +127,274 @@ export const DynamicPricingCandyMachine = (
 	}, [solanaUnixTime]);
 
   return (
-    <Grid
-      w={'full'}
-      h={'full'}
-      minH={'100vh'}
-      backgroundImage={
-        'url(/assets/img/background.png)'
-      }
-      backgroundSize={'100% 100%'}
-      backgroundPosition={'center center'}
-      py={{ base: 8, md: 16 }}
-      px={{ base: 12, md: 24 }}
-      color={'black'}
-    >
-      <Grid w={'full'} marginBottom={{ base: 8, md: 16 }}>
-        <Image
-          alt={'Logo Image'}
-          fit={'cover'}
-          align={'center'}
-          w={'120px'}
-          h={'120px'}
-          src={
-            '/assets/img/logo1.png'
-          }
-        />
-      </Grid>
-      <Grid w={'full'} display={{ base: 'block', md: 'flex' }} marginBottom={'60'}>
-        <GridItem
-          w={{ base: '100%', md: '40%' }}
-          marginTop={6}
-        >
-          <Text fontSize={'5xl'} fontWeight={'bold'} align={'center'}>
-            MINT AN APACHE!
-          </Text>
-          <Text fontSize={'xl'} fontWeight={'bold'}>
-            Description for the mint. Description for the mint. Description for the mint. Description for the mint. Description for the mint. 
-          </Text>
-          <Box
-            position={'relative'}
-            rounded={'2xl'}
-            width={'full'}
-            overflow={'hidden'}>
+    <VStack justifyContent={'space-between'} background={'#544a5d'}>
+      <Grid
+        w={'full'}
+        h={'full'}
+        minH={'100vh'}
+        backgroundImage={
+          'url(/assets/img/background.png)'
+        }
+        backgroundSize={'100% 100%'}
+        backgroundPosition={'center center'}
+        py={{ base: 6, sm: 8, lg: 16 }}
+        px={{ base: 6, sm: 16, lg: 36 }}
+        color={'black'}
+      >
+        <HStack w={'full'} height={{base: '80px', md: '100px', lg: '120px'}} marginBottom={{ base: 4, md: 8, lg: 16 }}>
+          <Box h={'full'}>
             <Image
-              alt={'Hero Image'}
+              alt={'Logo Image'}
               fit={'cover'}
-              align={'center'}
-              w={'100%'}
-              h={'100%'}
+              w={'full'}
+              h={'full'}
               src={
-                '/assets/img/apaches-gif.gif'
+                '/assets/img/logo1.png'
               }
             />
           </Box>
-        </GridItem>
-        <GridItem w={{ base: '100%', md: '60%' }} paddingLeft={{ base: 0, md: 12 }}>
-          <Text fontSize={'2xl'} fontWeight={'bold'} marginBottom={6}>
-            {!connected && `Please connect your wallet`}
-            {
-              candyMachine?.goLiveDate
-              && unixTime < candyMachine?.goLiveDate.toNumber()
-              && `Mint day: ${formatUTC(candyMachine?.goLiveDate.toNumber())}`
-            }
-            {
-              candyMachine?.goLiveDate
-              && unixTime > candyMachine?.goLiveDate.toNumber()
-              && candyMachine?.isSoldOut === false
-              && `Minting Now!`
-            }
-            {
-              candyMachine?.goLiveDate
-              && unixTime > candyMachine?.goLiveDate.toNumber()
-              && candyMachine?.isSoldOut === true
-              && `Sold Out!`
-            }
-          </Text>
-          <Box
-            rounded={'2xl'}
-            background={'whiteAlpha.500'}
-            px={8}
-            paddingTop={6}
-            paddingBottom={20}
-          >
-            {candyMachine?.goLiveDate && unixTime < candyMachine?.goLiveDate.toNumber() && (
-              <TimeCountdown
-                connected={connected}
-                goLiveDate={candyMachine?.goLiveDate.toNumber()}
-              />
-            )}
-            {candyMachine && candyMachine?.goLiveDate && unixTime > candyMachine?.goLiveDate.toNumber() && (
-              <VStack marginBottom={6}>
-                <Flex
-                  width={'full'}
-                  flexDirection={'row'}
-                >
-                  <Text fontSize={'2xl'} fontWeight={'bold'}>
-                    Total Minted
-                  </Text>
-                  <Grid flexGrow={1}></Grid>
-                  <Text fontSize={'2xl'} fontWeight={'bold'} color={'#568c74'} marginRight={'10px'}>
-                    {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
-                      `[${numberWithCommas(Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100, 1)}%]`
-                    )}
-                  </Text>
-                  <Text fontSize={'2xl'} fontWeight={'bold'}>
-                    {`${candyMachine?.itemsRedeemed} / ${candyMachine.itemsAvailable}`}
-                  </Text>
-                </Flex>
-                {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
-                  <Progress
-                    height='32px'
-                    width={'full'}
-                    value={Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100}
-                    borderRadius={'20px'}
-                  />
-                )}
-              </VStack>
-            )}
-            <PrivatePrice
-              connected={connected}
-              candyMachine={candyMachine}
-              isWhitelistUser={isWhitelistUser}
-              discountPrice={discountPrice}
-              goLiveDate={candyMachine?.goLiveDate.toNumber()}
+          <Box h={'full'} py={'20px'}>
+            <Image
+              alt={'Logo Image2'}
+              fit={'cover'}
+              w={'full'}
+              h={'full'}
+              src={
+                '/assets/img/logo22.png'
+              }
             />
-            <PublicPrice
-              connected={connected}
-              candyMachine={candyMachine}
-              price={price}
-              loadingPricing={loadingPricing}
-              goLiveDate={candyMachine?.goLiveDate.toNumber()}
-            />
-            {connected && !candyMachine && (
-              <Flex>
-                <Button
-                  w={'full'}
-                  background={'#9a46fb'}
-                  color={'white'}
-                  fontSize={'2xl'}
-                  fontWeight={'bold'}
-                  size={'lg'}
-                >
-                  <Spinner />
-                </Button>
-              </Flex>
-            )}
-            {connected && candyMachine && (
-              <MintButton
-                price={price}
-                onMint={onMint}
-                tokenBondingKey={tokenBonding?.publicKey}
-                isDisabled={
-                  (!isActive && (!isPresale || !isWhitelistUser)) ||
-                  (candyMachine.isWhitelistOnly && !isWhitelistUser)
+          </Box>
+          <Grid flexGrow={1} />
+          <Box h={'full'} py={{base: '28px', md: '35px', lg: '40px'}} paddingRight={{base: '10px', md: '15px', lg: '20px'}}>
+            <Link href='https://twitter.com/apachesNFT' isExternal>
+              <Image
+                alt={'Twitter Image'}
+                fit={'cover'}
+                w={'full'}
+                h={'full'}
+                src={
+                  '/assets/img/apaches_tw.png'
                 }
               />
-            )}
-            {!connected && (
-              <Flex>
-                <Button
-                  w={'full'}
-                  background={'#9a46fb'}
-                  color={'white'}
-                  fontSize={'2xl'}
-                  fontWeight={'bold'}
-                  size={'lg'}
-                  onClick={props.onConnectWallet}
-                >
-                  Connect Wallet
-                </Button>
-              </Flex>
-            )}
+            </Link>
           </Box>
-          <Text textAlign={'center'} fontSize={'lg'} fontWeight={'bold'} color={'#544a5c'}>
-            Powered by LIBROS.COM
-          </Text>
-        </GridItem>
+          <Box h={'full'} py={{base: '28px', md: '35px', lg: '40px'}}>
+            <Link href='https://discord.gg/apaches' isExternal>
+              <Image
+                alt={'Discord Image'}
+                fit={'cover'}
+                w={'full'}
+                h={'full'}
+                src={
+                  '/assets/img/apaches_discord.png'
+                }
+              />
+            </Link>
+          </Box>
+        </HStack>
+        <Grid w={'full'} display={{ base: 'block', md: 'flex' }} marginBottom={'60'}>
+          <GridItem
+            w={{ base: '100%', md: '36%' }}
+            marginTop={{base: 0, md: 6}}
+          >
+            <Text fontSize={{base: '3xl', md: '4xl'}} fontWeight={'bold'}>
+              Apaches NFT
+            </Text>
+            <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'}>
+              Supply: 2,500
+            </Text>
+            <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'}>
+              WL mint: 1.8 ◎
+            </Text>
+            <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'} marginBottom={{base: 2, md: 4, lg: 8}}>
+              Public: Dynamic price starting at 3 ◎
+            </Text>
+            <Box
+              position={'relative'}
+              rounded={'2xl'}
+              width={'full'}
+              overflow={'hidden'}
+              my={{base: 3, md: 0}}
+            >
+              <Image
+                alt={'Hero Image'}
+                fit={'cover'}
+                align={'center'}
+                w={'100%'}
+                h={'100%'}
+                src={
+                  '/assets/img/apaches-gif.gif'
+                }
+              />
+            </Box>
+          </GridItem>
+          <GridItem w={{ base: '100%', md: '64%' }} paddingLeft={{ base: 0, md: 24 }}>
+            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight={'bold'} marginBottom={6} textAlign={{ base: 'center', md: 'left' }}>
+              {!connected && `Please connect your wallet`}
+              {
+                candyMachine &&
+                unixTime < goLiveDate
+                && `Mint day: ${formatUTC(presaleStartDate)}`
+              }
+              {
+                candyMachine &&
+                unixTime > goLiveDate
+                && candyMachine?.isSoldOut !== true
+                && `Minting Now!`
+              }
+              {
+                candyMachine &&
+                unixTime > goLiveDate
+                && candyMachine?.isSoldOut === true
+                && `Sold Out!`
+              }
+            </Text>
+            <Box
+              rounded={'2xl'}
+              background={'whiteAlpha.500'}
+              px={{base: 4, md: 8}}
+              paddingTop={{base: 3, md: 6}}
+              paddingBottom={20}
+            >
+              {unixTime < presaleStartDate && (
+                <TimeCountdown
+                  goLiveDate={presaleStartDate}
+                />
+              )}
+              {candyMachine && unixTime > presaleStartDate && (
+                <VStack marginBottom={6}>
+                  <Flex
+                    width={'full'}
+                    flexDirection={'row'}
+                  >
+                    <Text fontSize={'2xl'} fontWeight={'bold'}>
+                      Total Minted
+                    </Text>
+                    <Grid flexGrow={1}></Grid>
+                    <Text fontSize={'2xl'} fontWeight={'bold'} color={'#568c74'} marginRight={'10px'}>
+                      {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
+                        `[${numberWithCommas(Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100, 1)}%]`
+                      )}
+                    </Text>
+                    <Text fontSize={'2xl'} fontWeight={'bold'}>
+                      {`${candyMachine?.itemsRedeemed} / ${candyMachine.itemsAvailable}`}
+                    </Text>
+                  </Flex>
+                  {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
+                    <Progress
+                      height='32px'
+                      width={'full'}
+                      value={Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100}
+                      borderRadius={'20px'}
+                    />
+                  )}
+                </VStack>
+              )}
+              <PrivatePrice
+                connected={connected}
+                candyMachine={candyMachine}
+                isWhitelistUser={isWhitelistUser}
+                discountPrice={discountPrice}
+                goLiveDate={goLiveDate}
+              />
+              <PublicPrice
+                connected={connected}
+                candyMachine={candyMachine}
+                price={price}
+                loadingPricing={loadingPricing}
+                goLiveDate={goLiveDate}
+              />
+              {connected && !candyMachine && (
+                <Flex>
+                  <Button
+                    w={'full'}
+                    background={'#9a46fb'}
+                    color={'white'}
+                    fontSize={'2xl'}
+                    fontWeight={'bold'}
+                    size={'lg'}
+                    disabled
+                  >
+                    <Spinner />
+                  </Button>
+                </Flex>
+              )}
+              {connected && candyMachine 
+                && ((unixTime > presaleStartDate && unixTime < presaleEndDate) || unixTime > goLiveDate)
+                && (
+                <MintButton
+                  price={price}
+                  onMint={onMint}
+                  tokenBondingKey={tokenBonding?.publicKey}
+                  goLiveDate={goLiveDate}
+                  isDisabled={
+                    (!isActive && (!isPresale || !isWhitelistUser)) ||
+                    (candyMachine.isWhitelistOnly && !isWhitelistUser)
+                  }
+                />
+              )}
+              {connected && candyMachine 
+                && (unixTime < presaleStartDate || (unixTime > presaleEndDate && unixTime < goLiveDate))
+                && (
+                <Flex>
+                  <Button
+                    w={'full'}
+                    background={'#9a46fb'}
+                    color={'white'}
+                    fontSize={'2xl'}
+                    fontWeight={'bold'}
+                    size={'lg'}
+                    disabled
+                  >
+                    Mint
+                  </Button>
+                </Flex>
+              )}
+              {!connected && (
+                <Flex>
+                  <Button
+                    w={'full'}
+                    background={'#9a46fb'}
+                    color={'white'}
+                    fontSize={'2xl'}
+                    fontWeight={'bold'}
+                    size={'lg'}
+                    onClick={props.onConnectWallet}
+                  >
+                    Connect Wallet
+                  </Button>
+                </Flex>
+              )}
+            </Box>
+            <Box
+              position={'relative'}
+              width={'full'}
+              overflow={'hidden'}
+            >
+              <Link href='https://launchpad.libros.com/' isExternal>
+                <Image
+                  alt={'Sponsors Image'}
+                  fit={'cover'}
+                  align={'center'}
+                  w={'100%'}
+                  h={'100%'}
+                  src={
+                    '/assets/img/sponsors.png'
+                  }
+                />
+              </Link>
+            </Box>
+            {/* <Text textAlign={'center'} fontSize={'lg'} fontWeight={'bold'} color={'#544a5c'}>
+              Powered by LIBROS.COM
+            </Text> */}
+          </GridItem>
+        </Grid>
       </Grid>
-    </Grid>
+      <Grid w={'full'} h={'full'} paddingTop={2} paddingBottom={16} px={4} color={'white'} textAlign={'center'} fontSize={'xl'} fontWeight={'bold'}>
+        <Link href='https://apaches.io/terms.htm' isExternal>
+          Terms and conditions
+        </Link>
+      </Grid>
+    </VStack>
   );
 };

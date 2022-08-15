@@ -8,7 +8,6 @@ import React, { useEffect, useState } from "react";
 
 
 export const TimeCountdown = ({
-    connected,
 	goLiveDate
 }) => {
     const [elapsedHours, setElapsedHours] = useState(0);
@@ -18,22 +17,23 @@ export const TimeCountdown = ({
 	const solanaUnixTime = useSolanaUnixTime();
 
 	useEffect(() => {
-        if (!connected || goLiveDate === undefined) return;
+        if (goLiveDate === undefined) return;
 
-		const unixTime = solanaUnixTime || Math.round(Date.now() / 1000);
+        const unixTime = solanaUnixTime || Math.round(Date.now() / 1000);
         if (goLiveDate < unixTime) {
             setElapsedHours(0);
             setElapsedMinutes(0);
             setElapsedSeconds(0);
             return;
         }
-        const _elapsedHours = Math.round((unixTime - unixTime % 3600) / 3600);
-        const _elapsedMinutes = Math.round(((unixTime - _elapsedHours * 3600 - (unixTime - _elapsedHours * 3600) % 60)) / 60);
-        const _elapsedSeconds = unixTime - _elapsedHours * 3600 - _elapsedMinutes * 60;
+        const timediff = goLiveDate - unixTime;
+        const _elapsedHours = Math.round((timediff - timediff % 3600) / 3600);
+        const _elapsedMinutes = Math.round(((timediff - _elapsedHours * 3600 - (timediff - _elapsedHours * 3600) % 60)) / 60);
+        const _elapsedSeconds = timediff - _elapsedHours * 3600 - _elapsedMinutes * 60;
         setElapsedHours(_elapsedHours);
         setElapsedMinutes(_elapsedMinutes);
         setElapsedSeconds(_elapsedSeconds);
-	}, [goLiveDate, solanaUnixTime, connected]);
+	}, [goLiveDate, solanaUnixTime]);
 
 	return (
         <Flex flexDirection={'row'} justifyContent={'center'} gap={'8'} marginBottom={6} color={'#725B89'}>

@@ -10,13 +10,16 @@ import {
   useCapInfo,
   useErrorHandler,
   useProvider,
+  useSolanaUnixTime,
   useStrataSdks,
   useTokenBonding,
   useUserOwnedAmount,
 } from "@strata-foundation/react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAsyncCallback } from "react-async-hook";
 import toast from "react-hot-toast";
+
+const dynamicPricingDuration = Number(process.env.REACT_APP_DYNAMINT_DURATION ? process.env.REACT_APP_DYNAMINT_DURATION : 7200);
 
 async function buy({
   tokenBondingSdk,
@@ -50,6 +53,7 @@ export const MintButton = ({
   price: inputPrice,
   isDisabled,
   disabledText,
+  goLiveDate,
   onMint = buy,
 }) => {
   const { connected, publicKey } = useWallet();
@@ -76,6 +80,15 @@ export const MintButton = ({
     tokenBonding.goLiveUnixTime.toNumber() > new Date().valueOf() / 1000;
 
   const canFinishPrevious = (targetBalance || 0) > 0;
+
+  const solanaUnixTime = useSolanaUnixTime();
+
+	const [unixTime, setUnixTime] = useState(Math.round(Date.now() / 1000));
+
+	useEffect(() => {
+		setUnixTime(solanaUnixTime || Math.round(Date.now() / 1000));
+	}, [solanaUnixTime]);
+
   return (
     <Flex>
       <Button
@@ -114,16 +127,11 @@ export const MintButton = ({
           ? "Sold Out"
           : insufficientBalance
           ? "Insufficient Balance"
-          : notLive
-          ? `Goes live at ${
-              tokenBonding &&
-              new Date(
-                tokenBonding.goLiveUnixTime.toNumber() * 1000
-              ).toLocaleString()
-            }`
-          : connected
-          ? "MINT"
-          : "CONNECT WALLET"}
+          : !connected
+          ? "CONNECT WALLET"
+          : unixTime > goLiveDate + dynamicPricingDuration
+          ? "MINT 0.5 SOL"
+          : "MINT"}
       </Button>
     </Flex>
   );
