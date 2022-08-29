@@ -11,3 +11,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.wallet-adapter-button-trigger {
+  background-color: #9a46fb !important;
+}
+
+.wallet-adapter-button-trigger:hover {
+  background-color: #e2e8f0 !important;
+}

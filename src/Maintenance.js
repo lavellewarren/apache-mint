@@ -37,7 +37,7 @@ export default function Maintenance() {
 								bg={'blue.400'}
 								rounded={'full'}
 								color={'white'}
-								_hover={{ bg: "blue.500" }}>
+								_hover={{ bg: 'blue.500' }}>
 								Tweet Us...
 							</Button>
 						</Link>

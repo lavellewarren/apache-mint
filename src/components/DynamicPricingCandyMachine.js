@@ -13,7 +13,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { mintOneToken, numberWithCommas, useCandyMachineInfo, useLivePrice } from "@strata-foundation/marketplace-ui";
+import { mintOneToken, numberWithCommas, useCandyMachine, useCandyMachineInfo, useLivePrice } from "@strata-foundation/marketplace-ui";
 import {
   Notification,
   useSolanaUnixTime,
@@ -27,6 +27,7 @@ import { MintedNftNotification } from "./MintedNftNotification";
 import { PrivatePrice } from "./PrivatePrice";
 import { PublicPrice } from "./PublicPrice";
 import { TimeCountdown } from "./TimeCountdown";
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const defaultGoLiveDate = Number(process.env.REACT_APP_DEFAULT_GOLIVEDATE ? process.env.REACT_APP_DEFAULT_GOLIVEDATE : 1660575600);
 const presaleStartDate = Number(process.env.REACT_APP_PRESALE_STARTDATE ? process.env.REACT_APP_PRESALE_STARTDATE : 1660575600);
@@ -36,6 +37,8 @@ export const DynamicPricingCandyMachine = (
   props
 ) => {
   const { publicKey, connected } = useWallet();
+
+  const { info: cndyInfo } = useCandyMachine(props.candyMachineId);
 
   const cmState = useCandyMachineInfo(props.candyMachineId);
   const { candyMachine, isWhitelistUser, discountPrice, isActive, isPresale } = cmState;
@@ -141,7 +144,7 @@ export const DynamicPricingCandyMachine = (
         px={{ base: 6, sm: 16, lg: 36 }}
         color={'black'}
       >
-        <HStack w={'full'} height={{base: '80px', md: '100px', lg: '120px'}} marginBottom={{ base: 4, md: 8, lg: 16 }}>
+        <HStack w={'full'} height={{base: '80px', md: '100px', lg: '120px'}}>
           <Box h={'full'}>
             <Image
               alt={'Logo Image'}
@@ -192,6 +195,13 @@ export const DynamicPricingCandyMachine = (
             </Link>
           </Box>
         </HStack>
+        <HStack w={'full'} justifyContent={'right'} marginBottom={{ base: 4, md: 8, lg: 16 }}>
+          <WalletMultiButton
+            style={{
+              background: '#fff'
+            }}
+          >{!connected ? 'Connect Wallet' : null}</WalletMultiButton>
+        </HStack>
         <Grid w={'full'} display={{ base: 'block', md: 'flex' }} marginBottom={'60'}>
           <GridItem
             w={{ base: '100%', md: '36%' }}
@@ -201,13 +211,13 @@ export const DynamicPricingCandyMachine = (
               Apaches NFT
             </Text>
             <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'}>
-              Supply: 2,500
+              Supply: 777
             </Text>
             <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'}>
-              WL mint: 1.8 ◎
+              Mint live! 0.5 SOL ◎
             </Text>
             <Text fontSize={{base: 'md', md: 'lg'}} fontWeight={'bold'} marginBottom={{base: 2, md: 4, lg: 8}}>
-              Public: Dynamic price starting at 3 ◎
+              {/* Public: Dynamic price starting at 3 ◎ */}
             </Text>
             <Box
               position={'relative'}
@@ -232,20 +242,20 @@ export const DynamicPricingCandyMachine = (
             <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight={'bold'} marginBottom={6} textAlign={{ base: 'center', md: 'left' }}>
               {!connected && `Please connect your wallet`}
               {
-                candyMachine &&
+                connected && candyMachine &&
                 unixTime < goLiveDate
                 && `Mint day: ${formatUTC(presaleStartDate)}`
               }
               {
-                candyMachine &&
+                connected && candyMachine &&
                 unixTime > goLiveDate
-                && candyMachine?.isSoldOut !== true
+                && candyMachine?.itemsRedeemed !== candyMachine?.itemsAvailable
                 && `Minting Now!`
               }
               {
-                candyMachine &&
+                connected && candyMachine &&
                 unixTime > goLiveDate
-                && candyMachine?.isSoldOut === true
+                && candyMachine?.itemsRedeemed === candyMachine?.itemsAvailable
                 && `Sold Out!`
               }
             </Text>
@@ -261,7 +271,7 @@ export const DynamicPricingCandyMachine = (
                   goLiveDate={presaleStartDate}
                 />
               )}
-              {candyMachine && unixTime > presaleStartDate && (
+              {cndyInfo && unixTime > presaleStartDate && (
                 <VStack marginBottom={6}>
                   <Flex
                     width={'full'}
@@ -272,19 +282,19 @@ export const DynamicPricingCandyMachine = (
                     </Text>
                     <Grid flexGrow={1}></Grid>
                     <Text fontSize={'2xl'} fontWeight={'bold'} color={'#568c74'} marginRight={'10px'}>
-                      {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
-                        `[${numberWithCommas(Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100, 1)}%]`
+                      {!isNaN(Number(cndyInfo.itemsAvailable)) && Number(cndyInfo.itemsAvailable) !== 0 && (
+                        `[${numberWithCommas(Number(cndyInfo?.itemsRedeemed) / Number(cndyInfo.itemsAvailable) * 100, 1)}%]`
                       )}
                     </Text>
                     <Text fontSize={'2xl'} fontWeight={'bold'}>
-                      {`${candyMachine?.itemsRedeemed} / ${candyMachine.itemsAvailable}`}
+                      {`${cndyInfo?.itemsRedeemed} / ${cndyInfo.itemsAvailable}`}
                     </Text>
                   </Flex>
-                  {!isNaN(Number(candyMachine.itemsAvailable)) && Number(candyMachine.itemsAvailable) !== 0 && (
+                  {!isNaN(Number(cndyInfo.itemsAvailable)) && Number(cndyInfo.itemsAvailable) !== 0 && (
                     <Progress
                       height='32px'
                       width={'full'}
-                      value={Number(candyMachine?.itemsRedeemed) / Number(candyMachine.itemsAvailable) * 100}
+                      value={Number(cndyInfo?.itemsRedeemed) / Number(cndyInfo.itemsAvailable) * 100}
                       borderRadius={'20px'}
                     />
                   )}
@@ -328,8 +338,9 @@ export const DynamicPricingCandyMachine = (
                   tokenBondingKey={tokenBonding?.publicKey}
                   goLiveDate={goLiveDate}
                   isDisabled={
-                    (!isActive && (!isPresale || !isWhitelistUser)) ||
-                    (candyMachine.isWhitelistOnly && !isWhitelistUser)
+                    true
+                    // (!isActive && (!isPresale || !isWhitelistUser)) ||
+                    // (candyMachine.isWhitelistOnly && !isWhitelistUser)
                   }
                 />
               )}
