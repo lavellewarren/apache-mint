@@ -62,14 +62,14 @@ export const PublicPrice = ({
 					{(unixTime > goLiveDate && unixTime < goLiveDate + dynamicPricingDuration) && (
 						`Ends in ${formatElapsedTime(unixTime, goLiveDate + dynamicPricingDuration)}`
 						)}
-					{!!candyMachine && (unixTime > goLiveDate + dynamicPricingDuration && candyMachine.isSoldOut === true)
+					{!!candyMachine && (unixTime > goLiveDate + dynamicPricingDuration && candyMachine.itemsRedeemed === candyMachine.itemsAvailable)
 						? `Ended`
 						: unixTime > goLiveDate + dynamicPricingDuration ? 'Active' : null
 					}
 					&nbsp;
 				</Text>
 				<Text fontSize={'xl'} fontWeight={'bold'}>
-					{unixTime < goLiveDate + dynamicPricingDuration && unixTime > presaleEndDate && (loadingPricing || typeof price == "undefined") && isActive && candyMachine.isSoldOut === true && 
+					{unixTime < goLiveDate + dynamicPricingDuration && unixTime > presaleEndDate && (loadingPricing || typeof price == "undefined") && isActive && candyMachine.itemsRedeemed === candyMachine.itemsAvailable && 
 						`${numberWithCommas((new BN(candyMachine.price.toNumber())).div(new BN(10 ** 9)).toNumber(), 9)} SOL`
 					}
 					{unixTime < goLiveDate + dynamicPricingDuration && unixTime > presaleEndDate && !(loadingPricing || typeof price == "undefined") && 
